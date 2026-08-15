@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F7F8F6">
+<title>ميزان — بوابة الانضباط</title>
+<link rel="manifest" href="manifest.json">
+<meta name="description" content="دفتر تداول شخصي وحاسبة إحصائية. لا ينفّذ صفقات.">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F8F6; --panel:#FFFFFF; --graphite:#23282E; --slate:#6B7580;
+  --hair:#DFE3E0; --signal:#0B5FA5; --halt:#B3261E; --pass:#256B4A;
+  --halt-bg:#FBEDEC; --pass-bg:#EDF4F0; --signal-bg:#EDF3F9; --amber:#8A5A00; --amber-bg:#FBF3E4;
+  --ar:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--graphite);font-family:var(--ar);font-size:15px;
+  line-height:1.65;padding-bottom:calc(74px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;display:inline-block}
+
+header{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--hair);
+  padding:calc(12px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.brand small{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--slate);letter-spacing:.16em;display:block;margin-top:-2px}
+.bal{text-align:left}
+.bal b{font-family:var(--mono);font-size:17px;font-weight:600;display:block;line-height:1.1}
+.bal span{font-size:11px;color:var(--slate)}
+
+main{padding:16px 16px 24px;max-width:620px;margin:0 auto}
+section{display:none;animation:in .22s ease}
+section.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.eyebrow{font-family:var(--ar);font-size:11.5px;font-weight:600;color:var(--slate);
+  margin:24px 0 8px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:'';flex:1;height:1px;background:var(--hair)}
+.eyebrow:first-child{margin-top:4px}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:16px;margin-bottom:12px}
+.muted{color:var(--slate);font-size:13px;line-height:1.6}
+
+.seal{border-radius:16px;padding:22px 18px;margin-bottom:14px;text-align:center;
+  border:1.5px solid var(--halt);background:var(--halt-bg);transition:.3s;position:relative;overflow:hidden}
+.seal.open{border-color:var(--pass);background:var(--pass-bg)}
+.seal.lock{border-color:var(--graphite);background:#EEF0EE}
+.seal::before{content:'';position:absolute;inset:0;opacity:.05;
+  background:repeating-linear-gradient(-45deg,var(--halt) 0 6px,transparent 6px 12px);transition:.3s}
+.seal.open::before{opacity:0}
+.seal.lock::before{background:repeating-linear-gradient(-45deg,var(--graphite) 0 6px,transparent 6px 12px);opacity:.06}
+.seal-v{position:relative;font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--halt);line-height:1.15}
+.seal.open .seal-v{color:var(--pass)} .seal.lock .seal-v{color:var(--graphite)}
+.seal-c{position:relative;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--halt);opacity:.8;margin-top:6px}
+.seal.open .seal-c{color:var(--pass)} .seal.lock .seal-c{color:var(--graphite)}
+.seal-n{position:relative;font-size:13px;color:var(--slate);margin-top:9px;line-height:1.55}
+.seal-size{position:relative;margin-top:14px;padding-top:13px;border-top:1px solid rgba(37,107,74,.25)}
+.seal-size b{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--pass)}
+.seal-size span{display:block;font-size:11.5px;color:var(--slate);margin-top:2px;line-height:1.5}
+
+.chk{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--hair);cursor:pointer;user-select:none}
+.chk:last-child{border-bottom:0}
+.chk-b{width:22px;height:22px;flex:0 0 22px;border-radius:6px;border:1.5px solid var(--hair);background:#fff;display:grid;place-items:center;transition:.15s}
+.chk.ok .chk-b{background:var(--pass);border-color:var(--pass)}
+.chk-b svg{width:12px;height:12px;opacity:0;transition:.15s}
+.chk.ok .chk-b svg{opacity:1}
+.chk-t{flex:1;font-size:14px;line-height:1.45}
+.chk-t i{display:block;font-style:normal;font-size:11.5px;color:var(--slate);font-family:var(--ar)}
+.chk.auto{cursor:default}
+.chk-tag{font-family:var(--ar);font-size:10px;padding:3px 7px;border-radius:4px;background:var(--signal-bg);color:var(--signal);font-weight:600}
+
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+label{display:block;font-family:var(--ar);font-size:11.5px;font-weight:500;color:var(--slate);margin-bottom:5px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--hair);border-radius:9px;background:#fff;
+  font-family:var(--mono);font-size:15px;color:var(--graphite);direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
+select{font-family:var(--ar);direction:rtl}
+input.txt{font-family:var(--ar);direction:rtl;text-align:right}
+input:focus,select:focus{outline:2px solid var(--signal);outline-offset:1px;border-color:var(--signal)}
+.fld{margin-bottom:12px}
+button{font-family:var(--ar);font-size:15px;font-weight:600;padding:13px;border-radius:10px;
+  border:1px solid var(--graphite);background:var(--graphite);color:#fff;width:100%;cursor:pointer}
+button:active{transform:translateY(1px)}
+button.ghost{background:#fff;color:var(--graphite)}
+button.win{background:var(--pass);border-color:var(--pass)}
+button.loss{background:var(--halt);border-color:var(--halt)}
+button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi>div{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:13px 14px}
+.kpi b{font-family:var(--mono);font-size:22px;font-weight:600;display:block;line-height:1.15}
+.kpi span{font-size:11.5px;color:var(--slate);font-family:var(--ar)}
+
+.gauge{height:6px;background:var(--hair);border-radius:3px;position:relative;margin:14px 0 6px}
+.gauge .band{position:absolute;top:0;bottom:0;background:var(--signal);opacity:.32;border-radius:3px}
+.gauge .be{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--halt)}
+.gauge .pt{position:absolute;top:-3px;width:12px;height:12px;border-radius:50%;background:var(--graphite);border:2px solid #fff;transform:translateX(-50%)}
+.glab{display:flex;direction:ltr;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--slate)}
+
+.verdict{border-radius:11px;padding:13px 14px;font-size:13.5px;line-height:1.6;margin-top:12px}
+.verdict.no{background:var(--halt-bg);color:#7C1A15;border:1px solid rgba(179,38,30,.25)}
+.verdict.yes{background:var(--pass-bg);color:#174C34;border:1px solid rgba(37,107,74,.25)}
+.verdict.mid{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(138,90,0,.25)}
+.verdict b{display:block;margin-bottom:3px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--ar);font-size:11px;color:var(--slate);text-align:right;padding:7px 6px;border-bottom:1px solid var(--hair);font-weight:600}
+td{padding:9px 6px;border-bottom:1px solid var(--hair)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--mono);text-align:center;font-variant-numeric:tabular-nums;direction:ltr}
+.pill{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600}
+.pill.w{background:var(--pass-bg);color:var(--pass)}
+.pill.l{background:var(--halt-bg);color:var(--halt)}
+
+.empty{text-align:center;padding:34px 18px;color:var(--slate);font-size:13.5px;line-height:1.7}
+.empty b{display:block;color:var(--graphite);font-size:15px;margin-bottom:5px}
+.note{border-right:3px solid var(--signal);background:var(--signal-bg);padding:12px 14px;border-radius:0 10px 10px 0;font-size:13px;line-height:1.65;margin-bottom:12px}
+.note.warn{border-color:var(--halt);background:var(--halt-bg)}
+.note.amb{border-color:var(--amber);background:var(--amber-bg)}
+.note b{display:block;margin-bottom:3px}
+
+/* source cards */
+.src{border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--panel)}
+.src-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.src-n{font-size:15px;font-weight:600}
+.src-n i{display:block;font-style:normal;font-size:11.5px;color:var(--slate);font-weight:400}
+.src-v{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:20px;font-weight:600;white-space:nowrap}
+.src-v.no{background:var(--halt-bg);color:var(--halt)}
+.src-v.yes{background:var(--pass-bg);color:var(--pass)}
+.src-v.mid{background:var(--amber-bg);color:var(--amber)}
+.src-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;text-align:center}
+.src-g div{background:var(--paper);border-radius:8px;padding:7px 3px}
+.src-g b{font-family:var(--mono);font-size:14px;display:block;font-weight:600}
+.src-g span{font-size:10px;color:var(--slate)}
+
+/* log */
+.log{background:#1B2026;border-radius:12px;padding:13px;font-family:var(--mono);font-size:11px;
+  line-height:1.8;direction:ltr;text-align:left;max-height:210px;overflow-y:auto;color:#9BA5AF}
+.log div{white-space:pre-wrap;word-break:break-word}
+.log .g{color:#5FCF95} .log .r{color:#E88A82} .log .y{color:#E5B75A} .log .b{color:#68B0E8}
+
+nav{position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(247,248,246,.96);
+  backdrop-filter:blur(12px);border-top:1px solid var(--hair);display:grid;grid-template-columns:repeat(5,1fr);
+  padding-bottom:env(safe-area-inset-bottom)}
+nav button{background:none;border:0;color:var(--slate);padding:9px 2px 10px;border-radius:0;
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:500}
+nav button b{font-size:10.5px;font-weight:600}
+nav button svg{width:20px;height:20px;stroke-width:1.7}
+nav button.on{color:var(--graphite)}
+nav button.on svg{stroke-width:2.2}
+nav button.alert{color:var(--halt)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">ميزان<small>DISCIPLINE GATE</small></div>
+  <div class="bal"><b class="num" id="hBal">—</b><span id="hSub">الرصيد</span></div>
+</header>
+
+<main>
+
+<!-- ============ GATE ============ -->
+<section id="s-gate" class="on">
+  <div class="seal" id="seal">
+    <div class="seal-v" id="sealV">لا تدخل</div>
+    <div class="seal-c num" id="sealC">0 / 12</div>
+    <div class="seal-n" id="sealN">أكمل الشروط أدناه.</div>
+    <div class="seal-size" id="sealS" style="display:none">
+      <b class="num" id="sealSize">—</b><span id="sealSizeSub"></span>
+    </div>
+  </div>
+
+  <div class="eyebrow">قياسات</div>
+  <div class="card">
+    <div class="row">
+      <div class="fld"><label>العائد %</label><input id="iPayout" type="number" inputmode="decimal" value="85"></div>
+      <div class="fld"><label>RSI-7</label><input id="iRsi" type="number" inputmode="decimal" value="50"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>الأصل</label><select id="iAsset"></select></div>
+      <div class="fld"><label>الاتجاه</label><select id="iSide"><option value="CALL">CALL — شراء</option><option value="PUT">PUT — بيع</option></select></div>
+    </div>
+    <div class="fld" style="margin-bottom:0"><label>مصدر الإشارة</label><select id="iSrc"></select></div>
+  </div>
+
+  <div class="eyebrow">تحقّق يدوي</div>
+  <div class="card" id="manualChecks"></div>
+
+  <div class="eyebrow">حالة الحساب والجلسة</div>
+  <div class="card" id="acctChecks"></div>
+
+  <div style="margin-top:16px"><button id="btnGoJournal" class="ghost">تسجيل نتيجة الصفقة ←</button></div>
+</section>
+
+<!-- ============ JOURNAL ============ -->
+<section id="s-journal">
+  <div class="eyebrow">تسجيل صفقة</div>
+  <div class="card">
+    <div class="row">
+      <div class="fld"><label>الأصل</label><select id="jAsset"></select></div>
+      <div class="fld"><label>الاتجاه</label><select id="jSide"><option>CALL</option><option>PUT</option></select></div>
+    </div>
+    <div class="fld"><label>مصدر الإشارة</label><select id="jSrc"></select></div>
+    <div class="row">
+      <div class="fld"><label>العائد %</label><input id="jPayout" type="number" inputmode="decimal" value="85"></div>
+      <div class="fld"><label>الحجم $</label><input id="jStake" type="number" inputmode="decimal" value="1" step="0.1"></div>
+      <div class="fld"><label>RSI</label><input id="jRsi" type="number" inputmode="decimal" placeholder="—"></div>
+    </div>
+    <div class="fld"><label>الانضباط — 5 يعني التزام تام بالقواعد</label>
+      <select id="jEmo">
+        <option value="5">5 — التزمت بكل شرط</option><option value="4">4 — التزام جيد</option>
+        <option value="3" selected>3 — مقبول</option><option value="2">2 — تساهلت في شرط</option>
+        <option value="1">1 — دخلت بانفعال</option>
+      </select></div>
+    <div class="fld" style="margin-bottom:0"><label>حساب</label>
+      <select id="jMode"><option value="demo">ديمو — مرحلة الإثبات</option><option value="real">حقيقي</option></select></div>
+    <div class="row" style="margin-top:14px">
+      <button class="win" onclick="addTrade(true)">ربح</button>
+      <button class="loss" onclick="addTrade(false)">خسارة</button>
+    </div>
+  </div>
+
+  <div class="eyebrow">الجلسة</div>
+  <div class="kpi">
+    <div><b class="num" id="dPnl">0.00</b><span>صافي اليوم $</span></div>
+    <div><b class="num" id="dCnt">0</b><span>صفقات اليوم</span></div>
+  </div>
+  <div id="lockNote"></div>
+
+  <div class="eyebrow">سجل الأحداث</div>
+  <div class="log" id="log"></div>
+
+  <div class="eyebrow">آخر الصفقات</div>
+  <div class="card" id="tradeList"></div>
+</section>
+
+<!-- ============ SOURCES ============ -->
+<section id="s-sources">
+  <div class="note amb"><b>لماذا هذه الشاشة موجودة</b>بوتات الإشارات تطلب منك أن تثق بمجموعة لم تُقس دقتها. هنا تقيسها بنفسك: سجّل كل إشارة ونتيجتها، وبعد عينة كافية سيقول لك الرقم إن كانت المجموعة تستحق أم لا.</div>
+
+  <div class="eyebrow">إضافة مصدر</div>
+  <div class="card">
+    <div class="fld"><label>اسم المصدر — مجموعة تليجرام، قناة، أو تحليلك الشخصي</label>
+      <input id="newSrc" class="txt" placeholder="مثال: مجموعة OTC"></div>
+    <button class="ghost" onclick="addSrc()">إضافة مصدر</button>
+  </div>
+
+  <div class="eyebrow">أداء المصادر</div>
+  <div id="srcList"></div>
+</section>
+
+<!-- ============ STATS ============ -->
+<section id="s-stats">
+  <div class="eyebrow">هل لديك حافة؟</div>
+  <div id="statBody"></div>
+</section>
+
+<!-- ============ TOOLS ============ -->
+<section id="s-tools">
+  <div class="eyebrow">الإعدادات</div>
+  <div class="card">
+    <div class="row">
+      <div class="fld"><label>الرصيد $</label><input id="cBal" type="number" inputmode="decimal" value="50"></div>
+      <div class="fld"><label>حد أدنى للعائد %</label><input id="cMin" type="number" inputmode="decimal" value="80"></div>
+    </div>
+    <div class="row">
+      <div class="fld" style="margin-bottom:0"><label>هدف الجلسة $</label><input id="cTgt" type="number" inputmode="decimal" value="2"></div>
+      <div class="fld" style="margin-bottom:0"><label>حد خسارة الجلسة $</label><input id="cSl" type="number" inputmode="decimal" value="3"></div>
+    </div>
+  </div>
+
+  <div class="eyebrow">محاكي المضاعف</div>
+  <div class="note warn"><b>اختبر أي إعداد مارتينجال قبل أن تجرّبه بمالك</b>أدخل نفس أرقام أي بوت وشاهد احتمال إفلاسك عبر 5000 محاكاة.</div>
+  <div class="card">
+    <div class="row">
+      <div class="fld"><label>الدخول $</label><input id="mEntry" type="number" inputmode="decimal" value="1.3" step="0.1"></div>
+      <div class="fld"><label>المضاعف ×</label><input id="mMult" type="number" inputmode="decimal" value="2.3" step="0.1"></div>
+      <div class="fld"><label>العائد %</label><input id="mPay" type="number" inputmode="decimal" value="80"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>الرصيد $</label><input id="mBal" type="number" inputmode="decimal" value="59"></div>
+      <div class="fld"><label>نسبة نجاح المصدر %</label><input id="mWr" type="number" inputmode="decimal" value="55"></div>
+      <div class="fld"><label>أيام</label><input id="mDays" type="number" inputmode="decimal" value="30"></div>
+    </div>
+    <button onclick="runSim()">شغّل المحاكاة</button>
+    <div id="simOut"></div>
+  </div>
+
+  <div class="eyebrow">جدول نقاط التعادل</div>
+  <div class="card"><table><thead><tr><th>العائد</th><th>نسبة النجاح للتعادل</th><th>الحكم</th></tr></thead><tbody id="beTable"></tbody></table></div>
+
+  <div class="eyebrow">البيانات</div>
+  <div class="card">
+    <button class="ghost" onclick="exportCsv()">تصدير الصفقات CSV</button>
+    <div style="height:9px"></div>
+    <button class="ghost" onclick="wipe()">مسح كل البيانات</button>
+  </div>
+
+  <div class="note warn"><b>ما لا يفعله هذا التطبيق</b>لا ينفّذ صفقات، ولا يتصل بأي وسيط، ولا يطلب رمز جلسة أو بيانات دخول، ولا يعطي إشارات. وظيفته أن يقيس انضباطك ويخبرك بصدق هل لديك حافة أم لا.</div>
+</section>
+
+</main>
+
+<nav>
+  <button class="on" data-t="gate" onclick="tab('gate')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/></svg><b>البوابة</b></button>
+  <button data-t="journal" onclick="tab('journal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h11l3 3v13H5z"/><path d="M9 10h6M9 14h4"/></svg><b>الدفتر</b></button>
+  <button data-t="sources" onclick="tab('sources')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 12a8 8 0 0116 0"/><circle cx="12" cy="17" r="2"/><path d="M7.5 14a5 5 0 019 0"/></svg><b>المصادر</b></button>
+  <button data-t="stats" onclick="tab('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><b>الإحصاء</b></button>
+  <button data-t="tools" onclick="tab('tools')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><b>الأدوات</b></button>
+</nav>
+
+<script>
+/* ============ storage ============ */
+const S={
+  get(k,d){try{const v=localStorage.getItem('mizan_'+k);return v?JSON.parse(v):d}catch(e){return (this._m||{})[k]??d}},
+  set(k,v){try{localStorage.setItem('mizan_'+k,JSON.stringify(v))}catch(e){(this._m=this._m||{})[k]=v}}
+};
+let trades=S.get('trades',[]);
+let cfg=S.get('cfg',{bal:50,min:80,tgt:2,sl:3});
+let sources=S.get('sources',['تحليلي الشخصي']);
+let logs=S.get('logs',[]);
+const ASSETS=['EURUSD','GBPUSD','AUDUSD','AUDCAD','USDJPY','USDCAD','EURJPY'];
+
+/* ============ math ============ */
+const be=p=>1/(1+p);
+const kelly=(p,b)=>Math.max(0,(b*p-(1-p))/b);
+function wilson(w,n,z=1.96){
+  if(!n)return[0,1];
+  const p=w/n,d=1+z*z/n,c=(p+z*z/(2*n))/d,h=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d;
+  return[Math.max(0,c-h),Math.min(1,c+h)];
+}
+const pct=x=>(x*100).toFixed(1)+'%';
+const pct2=x=>(x*100).toFixed(2)+'%';
+
+/* ============ log ============ */
+function addLog(msg,cls){
+  const t=new Date();
+  logs.push({t:`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`,m:msg,c:cls||''});
+  if(logs.length>60)logs=logs.slice(-60);
+  S.set('logs',logs);drawLog();
+}
+function drawLog(){
+  const el=document.getElementById('log');
+  if(!logs.length){el.innerHTML='<div>Ready. No events yet.</div>';return}
+  el.innerHTML=logs.slice(-40).map(l=>`<div class="${l.c}">[${l.t}] ${l.m}</div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+/* ============ selects ============ */
+function fillSelects(){
+  const a=ASSETS.map(x=>`<option>${x}</option>`).join('');
+  ['iAsset','jAsset'].forEach(id=>{const e=document.getElementById(id),v=e.value;e.innerHTML=a;if(v)e.value=v});
+  const s=sources.map(x=>`<option>${x}</option>`).join('');
+  ['iSrc','jSrc'].forEach(id=>{const e=document.getElementById(id),v=e.value;e.innerHTML=s;if(v&&sources.includes(v))e.value=v});
+}
+function addSrc(){
+  const v=document.getElementById('newSrc').value.trim();
+  if(!v)return;
+  if(sources.includes(v)){alert('المصدر موجود بالفعل');return}
+  sources.push(v);S.set('sources',sources);
+  document.getElementById('newSrc').value='';
+  addLog(`Source added: ${v}`,'b');
+  fillSelects();refresh();
+}
+function delSrc(name){
+  const used=trades.filter(t=>t.src===name).length;
+  if(used){alert(`لا يمكن الحذف — مرتبط بـ${used} صفقة. البيانات التاريخية لا تُمسح.`);return}
+  sources=sources.filter(x=>x!==name);S.set('sources',sources);fillSelects();refresh();
+}
+
+/* ============ manual checks ============ */
+const MANUAL=[
+  ['level','لمسة مستوى محسوب','آخر 120 شمعة، ضمن 0.5×ATR'],
+  ['pattern','نمط انعكاس مكتمل','Hammer أو Shooting Star'],
+  ['trend','اتجاه M5 لا يعاكس الصفقة',''],
+  ['news','خارج نافذة الأخبار','±15 دقيقة حول حدث عالي التأثير'],
+  ['real','أصل سوق حقيقي وليس OTC','أسعار OTC تولّدها المنصة نفسها'],
+  ['window','داخل النافذة الزمنية للزوج','']
+];
+let mstate={};
+function drawManual(){
+  document.getElementById('manualChecks').innerHTML=MANUAL.map(([k,t,s])=>
+    `<div class="chk ${mstate[k]?'ok':''}" onclick="tog('${k}')">
+      <div class="chk-b"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M4 12l6 6L20 6"/></svg></div>
+      <div class="chk-t">${t}${s?`<i>${s}</i>`:''}</div></div>`).join('');
+}
+function tog(k){mstate[k]=!mstate[k];drawManual();evaluate()}
+
+/* ============ account state ============ */
+const today=()=>new Date().toISOString().slice(0,10);
+const todays=()=>trades.filter(t=>t.d.slice(0,10)===today());
+const dailyPnl=()=>todays().reduce((a,t)=>a+t.pnl,0);
+function streak(){let s=0;for(let i=trades.length-1;i>=0;i--){if(trades[i].win)break;s++}return s}
+const balance=()=>cfg.bal+trades.filter(t=>t.mode==='real').reduce((a,t)=>a+t.pnl,0);
+function srcStats(name){
+  const g=trades.filter(t=>t.src===name);
+  if(!g.length)return null;
+  const w=g.filter(t=>t.win).length;
+  const [lo,hi]=wilson(w,g.length);
+  const avgPay=g.reduce((a,t)=>a+t.pay,0)/g.length;
+  const bp=be(avgPay);
+  const pnl=g.reduce((a,t)=>a+t.pnl,0);
+  return {n:g.length,w,wr:w/g.length,lo,hi,bp,pnl,avgPay,
+    proven:lo>bp, rejected:hi<bp};
+}
+function provenWr(){
+  const src=document.getElementById('iSrc').value;
+  const st=srcStats(src);
+  if(st&&st.n>=20)return st.wr;
+  if(trades.length<20)return null;
+  return trades.filter(t=>t.win).length/trades.length;
+}
+
+/* ============ gate ============ */
+function evaluate(){
+  const pay=(+document.getElementById('iPayout').value||0)/100;
+  const rsi=+document.getElementById('iRsi').value;
+  const side=document.getElementById('iSide').value;
+  const src=document.getElementById('iSrc').value;
+  const bal=balance(), dp=dailyPnl(), st=streak(), wr=provenWr();
+  const ss=srcStats(src);
+
+  const auto=[
+    ['العائد ≥ '+cfg.min+'%', pay>=cfg.min/100, `${(pay*100).toFixed(0)}% · تعادل ${pct2(be(pay))}`],
+    ['RSI-7 خارج 20 / 80', side==='CALL'?rsi<20:rsi>80, `RSI ${rsi} · ${side}`],
+    ['المصدر لم يُرفَض إحصائياً', !(ss&&ss.rejected), ss?`${src} · ${ss.n} صفقة · ${pct(ss.wr)}`:`${src} · لا بيانات بعد`],
+  ];
+  const acct=[
+    ['لم تبلغ حد خسارة الجلسة', dp>-cfg.sl, `اليوم ${dp>=0?'+':''}${dp.toFixed(2)}$ · الحد ${(-cfg.sl).toFixed(2)}$`],
+    ['لم تبلغ هدف الجلسة', dp<cfg.tgt, `الهدف ${cfg.tgt.toFixed(2)}$`],
+    ['الخسائر المتتالية أقل من 3', st<3, `${st} متتالية`],
+    ['الرصيد فوق 80% من رأس المال', bal>=cfg.bal*0.8, `${bal.toFixed(2)}$`],
+  ];
+
+  document.getElementById('acctChecks').innerHTML=[...auto,...acct].map(([t,ok,s])=>
+    `<div class="chk auto ${ok?'ok':''}">
+      <div class="chk-b"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M4 12l6 6L20 6"/></svg></div>
+      <div class="chk-t">${t}<i>${s}</i></div><span class="chk-tag">تلقائي</span></div>`).join('');
+
+  const mOk=MANUAL.filter(([k])=>mstate[k]).length;
+  const passed=mOk+auto.filter(a=>a[1]).length+acct.filter(a=>a[1]).length;
+  const total=MANUAL.length+auto.length+acct.length;
+  const failed=[...MANUAL.filter(([k])=>!mstate[k]).map(m=>m[1]),
+    ...auto.filter(a=>!a[1]).map(a=>a[0]),...acct.filter(a=>!a[1]).map(a=>a[0])];
+
+  const seal=document.getElementById('seal');
+  const hitTgt=dp>=cfg.tgt, hitSl=dp<=-cfg.sl, locked=hitSl||st>=3||hitTgt;
+  seal.className='seal'+(passed===total?' open':locked?' lock':'');
+  document.getElementById('sealC').textContent=passed+' / '+total;
+
+  if(locked){
+    document.getElementById('sealV').textContent=hitTgt?'انتهت الجلسة':'الجلسة مغلقة';
+    document.getElementById('sealN').textContent=
+      hitTgt?`بلغت هدف الجلسة (${cfg.tgt}$). أغلق المنصة — الطمع بعد الهدف هو ما يعيد الأرباح للسوق.`
+      :st>=3?'ثلاث خسائر متتالية. أغلق المنصة لبقية اليوم.'
+      :`بلغت حد خسارة الجلسة (${cfg.sl}$). عد غداً.`;
+    document.getElementById('sealS').style.display='none';
+  }else if(passed===total){
+    document.getElementById('sealV').textContent='مسموح';
+    document.getElementById('sealN').textContent='كل الشروط تحققت.';
+    const p=wr??0.57;
+    const f=Math.min(kelly(p,pay)/4,0.02);
+    const stake=Math.max(1,Math.round(bal*f*100)/100);
+    document.getElementById('sealS').style.display='block';
+    document.getElementById('sealSize').textContent=stake.toFixed(2)+'$';
+    document.getElementById('sealSizeSub').textContent=
+      `${pct(stake/bal)} من الرصيد · ربع كيلي · `+
+      (wr===null?'نسبة افتراضية 57% حتى تسجّل 20 صفقة':(ss&&ss.n>=20?`نسبة ${src}: ${pct(wr)}`:`نسبتك العامة ${pct(wr)}`));
+    document.getElementById('jPayout').value=(pay*100).toFixed(0);
+    document.getElementById('jStake').value=stake.toFixed(2);
+    document.getElementById('jAsset').value=document.getElementById('iAsset').value;
+    document.getElementById('jSide').value=side;
+    document.getElementById('jSrc').value=src;
+    document.getElementById('jRsi').value=rsi;
+  }else{
+    document.getElementById('sealV').textContent='لا تدخل';
+    document.getElementById('sealN').textContent=
+      (failed.length===1?'شرط ناقص: ':'شروط ناقصة: ')+failed.slice(0,3).join(' · ')+
+      (failed.length>3?` و${failed.length-3} غيرها`:'');
+    document.getElementById('sealS').style.display='none';
+  }
+  document.getElementById('hBal').textContent=bal.toFixed(2)+'$';
+  document.getElementById('hSub').textContent=dp===0?'الرصيد':`اليوم ${dp>0?'+':''}${dp.toFixed(2)}$`;
+  document.querySelector('nav button[data-t="gate"]').classList.toggle('alert',hitSl||st>=3);
+}
+
+/* ============ journal ============ */
+function addTrade(win){
+  const pay=(+document.getElementById('jPayout').value||0)/100;
+  const stake=+document.getElementById('jStake').value||0;
+  if(!pay||!stake){alert('أدخل العائد والحجم');return}
+  const src=document.getElementById('jSrc').value;
+  const t={d:new Date().toISOString(),a:document.getElementById('jAsset').value,
+    s:document.getElementById('jSide').value,src,pay,stake,win,
+    rsi:document.getElementById('jRsi').value||null,emo:+document.getElementById('jEmo').value,
+    mode:document.getElementById('jMode').value,pnl:win?stake*pay:-stake};
+  trades.push(t);S.set('trades',trades);
+  addLog(`${t.a} ${t.s} · ${src} · ${win?'WIN':'LOSS'} ${t.pnl>0?'+':''}${t.pnl.toFixed(2)}`,win?'g':'r');
+  const st=srcStats(src);
+  if(st&&st.rejected)addLog(`${src}: REJECTED — CI upper ${pct(st.hi)} < BE ${pct2(st.bp)}`,'r');
+  else if(st&&st.proven)addLog(`${src}: EDGE PROVEN — CI lower ${pct(st.lo)} > BE ${pct2(st.bp)}`,'g');
+  const dp=dailyPnl();
+  if(dp<=-cfg.sl)addLog(`SESSION STOP: ${dp.toFixed(2)}$`,'r');
+  else if(dp>=cfg.tgt)addLog(`TARGET REACHED: +${dp.toFixed(2)}$ — stop now`,'y');
+  if(streak()>=3)addLog('3 CONSECUTIVE LOSSES — session locked','r');
+  mstate={};drawManual();refresh();
+}
+function delTrade(i){if(confirm('حذف هذه الصفقة؟')){trades.splice(i,1);S.set('trades',trades);refresh()}}
+
+function drawJournal(){
+  const dp=dailyPnl();
+  const e=document.getElementById('dPnl');
+  e.textContent=(dp>=0?'+':'')+dp.toFixed(2);
+  e.style.color=dp>0?'var(--pass)':dp<0?'var(--halt)':'var(--graphite)';
+  document.getElementById('dCnt').textContent=todays().length;
+  const st=streak();
+  document.getElementById('lockNote').innerHTML=
+    (dp>=cfg.tgt)?`<div class="note amb"><b>بلغت هدف الجلسة</b>+${dp.toFixed(2)}$ من هدف ${cfg.tgt}$. أغلق المنصة. الاستمرار بعد الهدف هو أكثر ما يعيد الأرباح للسوق.</div>`
+    :(dp<=-cfg.sl)?`<div class="note warn"><b>الجلسة مغلقة</b>بلغت حد الخسارة (${cfg.sl}$). أغلق المنصة لبقية اليوم.</div>`
+    :(st>=3)?`<div class="note warn"><b>الجلسة مغلقة</b>ثلاث خسائر متتالية. توقف بغض النظر عن الرصيد.</div>`
+    :(st===2)?`<div class="note"><b>تنبيه</b>خسارتان متتاليتان. خسارة ثالثة تُغلق الجلسة.</div>`:'';
+
+  const el=document.getElementById('tradeList');
+  if(!trades.length){
+    el.innerHTML='<div class="empty"><b>الدفتر فارغ</b>سجّل كل صفقة — بما فيها الخاسرة وصفقات الديمو. البيانات الناقصة تعطيك حافة وهمية.</div>';return;
+  }
+  el.innerHTML=`<table><thead><tr><th>الوقت</th><th>الأصل / المصدر</th><th>العائد</th><th>ص/خ</th><th>الصافي</th><th></th></tr></thead><tbody>`+
+    trades.slice(-25).reverse().map(t=>{
+      const i=trades.indexOf(t),d=new Date(t.d);
+      return `<tr>
+        <td class="n">${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</td>
+        <td style="font-size:12px">${t.a}<br><span style="color:var(--slate);font-size:10.5px">${t.src||'—'}${t.mode==='demo'?' · ديمو':''}</span></td>
+        <td class="n">${(t.pay*100).toFixed(0)}%</td>
+        <td class="n"><span class="pill ${t.win?'w':'l'}">${t.win?'ربح':'خسارة'}</span></td>
+        <td class="n" style="color:${t.win?'var(--pass)':'var(--halt)'}">${t.pnl>0?'+':''}${t.pnl.toFixed(2)}</td>
+        <td class="n"><button class="ghost" style="padding:4px 8px;font-size:11px;width:auto;border:0;color:var(--slate)" onclick="delTrade(${i})">حذف</button></td>
+      </tr>`}).join('')+'</tbody></table>';
+}
+
+/* ============ sources ============ */
+function drawSources(){
+  const el=document.getElementById('srcList');
+  el.innerHTML=sources.map(name=>{
+    const s=srcStats(name);
+    if(!s)return `<div class="src"><div class="src-h"><div class="src-n">${name}<i>لا صفقات مسجّلة بعد</i></div>
+      <span class="src-v mid">لم يُقس</span></div>
+      <div class="muted" style="font-size:12px">سجّل صفقات بهذا المصدر ليبدأ القياس. تحتاج 30 صفقة على الأقل لأي حكم أولي.</div>
+      <div style="margin-top:10px"><button class="ghost" style="padding:8px;font-size:12px" onclick="delSrc('${name}')">حذف المصدر</button></div></div>`;
+    const cls=s.proven?'yes':s.rejected?'no':'mid';
+    const label=s.proven?'حافة مُثبتة':s.rejected?'مرفوض — خاسر':'غير كافٍ';
+    const msg=s.proven
+      ? `الحد الأدنى للثقة ${pct(s.lo)} يتجاوز التعادل ${pct2(s.bp)}. هذا المصدر يستحق.`
+      : s.rejected
+      ? `الحد الأعلى للثقة ${pct(s.hi)} أقل من التعادل ${pct2(s.bp)}. هذا المصدر خاسر إحصائياً — احذفه من خطتك.`
+      : `مجال الثقة [${pct(s.lo)} , ${pct(s.hi)}] يحيط بالتعادل ${pct2(s.bp)}. لا يمكن الحكم بعد${s.n<400?` — تحتاج ${400-s.n} صفقة إضافية`:''}.`;
+    return `<div class="src">
+      <div class="src-h"><div class="src-n">${name}<i>متوسط العائد ${pct(s.avgPay)} · تعادل ${pct2(s.bp)}</i></div>
+      <span class="src-v ${cls}">${label}</span></div>
+      <div class="src-g">
+        <div><b>${s.n}</b><span>صفقة</span></div>
+        <div><b>${pct(s.wr)}</b><span>نجاح</span></div>
+        <div><b>${pct(s.lo)}</b><span>حد أدنى</span></div>
+        <div><b style="color:${s.pnl>=0?'var(--pass)':'var(--halt)'}">${s.pnl>0?'+':''}${s.pnl.toFixed(1)}</b><span>صافي $</span></div>
+      </div>
+      <div class="verdict ${cls}" style="margin-top:10px">${msg}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============ stats ============ */
+function drawStats(){
+  const el=document.getElementById('statBody'),n=trades.length;
+  if(!n){el.innerHTML='<div class="empty"><b>لا توجد بيانات</b>الإحصاء يحتاج صفقات. ابدأ بالديمو — الهدف 400 صفقة قبل أي إيداع حقيقي.</div>';return}
+  const w=trades.filter(t=>t.win).length,wr=w/n,[lo,hi]=wilson(w,n);
+  const avgPay=trades.reduce((a,t)=>a+t.pay,0)/n,bep=be(avgPay);
+  const pnl=trades.reduce((a,t)=>a+t.pnl,0),proven=lo>bep;
+  const left=Math.max(0,400-n),x=v=>Math.min(100,Math.max(0,(v-0.3)/0.5*100));
+  el.innerHTML=`
+  <div class="kpi">
+    <div><b class="num">${n}</b><span>صفقات</span></div>
+    <div><b class="num">${pct(wr)}</b><span>نسبة النجاح</span></div>
+    <div><b class="num" style="color:${pnl>=0?'var(--pass)':'var(--halt)'}">${pnl>0?'+':''}${pnl.toFixed(2)}$</b><span>الصافي</span></div>
+    <div><b class="num">${pct2(bep)}</b><span>نقطة التعادل</span></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:2px">أين تقع نسبتك من نقطة التعادل</div>
+    <div class="muted" style="font-size:12px">الشريط الأزرق هو مجال الثقة 95%. الخط الأحمر هو التعادل. عليك أن تتجاوزه بالكامل.</div>
+    <div class="gauge">
+      <div class="band" style="left:${x(lo)}%;width:${Math.max(2,x(hi)-x(lo))}%"></div>
+      <div class="be" style="left:${x(bep)}%"></div>
+      <div class="pt" style="left:${x(wr)}%"></div>
+    </div>
+    <div class="glab"><span>30%</span><span>55%</span><span>80%</span></div>
+    <div style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--slate);direction:ltr;text-align:right">
+      CI95 = [${pct(lo)} , ${pct(hi)}] &nbsp;·&nbsp; BE = ${pct2(bep)}</div>
+    <div class="verdict ${proven?'yes':'no'}">
+      <b>${proven?'حافة مُثبتة إحصائياً':'الحافة غير مُثبتة'}</b>
+      ${proven?`الحد الأدنى (${pct(lo)}) يتجاوز التعادل.${n<400?' لكن العينة صغيرة، أكملها إلى 400.':''}`
+        :`الحد الأدنى (${pct(lo)}) لا يتجاوز التعادل (${pct2(bep)}). العينة لا تستبعد أنك خاسر.${left?` تحتاج ${left} صفقة إضافية.`:''}`}
+    </div>
+  </div>
+  ${n<400?`<div class="note"><b>لماذا 400 صفقة</b>بعينة 31 صفقة قد تُظهر بيانات عشوائية بحتة نسبة نجاح 61% بمجال ثقة [44% , 76%]. العينة الصغيرة لا تكذب أحياناً — بل تكذب غالباً.</div>`:''}
+  ${group('حسب المصدر','src')}${group('حسب الأصل','a')}${group('حسب الاتجاه','s')}
+  ${group('حسب الانضباط','emo','تقييم ')}${group('حسب الساعة','hour')}`;
+}
+function group(title,key,prefix=''){
+  const m={};
+  trades.forEach(t=>{const k=key==='hour'?String(new Date(t.d).getHours()).padStart(2,'0')+':00':(t[key]??'—');(m[k]=m[k]||[]).push(t)});
+  const keys=Object.keys(m).sort();
+  if(keys.length<2)return '';
+  return `<div class="eyebrow">${title}</div><div class="card"><table>
+    <thead><tr><th>الفئة</th><th>عدد</th><th>نجاح</th><th>حد أدنى</th><th>صافي</th></tr></thead><tbody>`+
+    keys.map(k=>{const g=m[k],w=g.filter(t=>t.win).length,[lo]=wilson(w,g.length);
+      const p=g.reduce((a,t)=>a+t.pnl,0),bp=be(g.reduce((a,t)=>a+t.pay,0)/g.length);
+      return `<tr><td>${prefix}${k}</td><td class="n">${g.length}</td><td class="n">${pct(w/g.length)}</td>
+        <td class="n" style="color:${lo>bp?'var(--pass)':'var(--slate)'}">${pct(lo)}</td>
+        <td class="n" style="color:${p>=0?'var(--pass)':'var(--halt)'}">${p>0?'+':''}${p.toFixed(2)}</td></tr>`}).join('')+
+    `</tbody></table><div class="muted" style="margin-top:9px;font-size:12px">أي فئة صافيها سالب مع 30 صفقة أو أكثر هي فئة تحذفها من خطتك.</div></div>`;
+}
+
+/* ============ martingale simulator ============ */
+function simulate(entry,mult,pay,bal0,p,days,tgt,sl,SIMS){
+  let ruin=0,profit=0,finals=[],maxLay=0;
+  for(let s=0;s<SIMS;s++){
+    let bal=bal0;
+    for(let d=0;d<days&&bal>=entry;d++){
+      let sess=0,guard=0;
+      while(sess>-sl&&sess<tgt&&bal>=entry&&guard++<200){
+        let stake=entry,lay=0;
+        while(bal>=stake){
+          if(Math.random()<p){bal+=stake*pay;sess+=stake*pay;break}
+          bal-=stake;sess-=stake;stake*=mult;lay++;
+          if(sess<=-sl||bal<stake)break;
+        }
+        if(lay>maxLay)maxLay=lay;
+      }
+    }
+    finals.push(bal);
+    if(bal<entry)ruin++;
+    if(bal>bal0)profit++;
+  }
+  finals.sort((a,b)=>a-b);
+  return {ror:ruin/SIMS,pw:profit/SIMS,med:finals[Math.floor(SIMS/2)],
+    p05:finals[Math.floor(SIMS*0.05)],p95:finals[Math.floor(SIMS*0.95)],maxLay};
+}
+
+function runSim(){
+  const entry=+document.getElementById('mEntry').value||1;
+  const mult=+document.getElementById('mMult').value||2;
+  const pay=(+document.getElementById('mPay').value||80)/100;
+  const bal0=+document.getElementById('mBal').value||50;
+  const p=(+document.getElementById('mWr').value||55)/100;
+  const days=+document.getElementById('mDays').value||30;
+  const SIMS=4000, tgt=cfg.tgt, sl=cfg.sl;
+
+  const M=simulate(entry,mult,pay,bal0,p,days,tgt,sl,SIMS);
+  const F=simulate(entry,1,pay,bal0,p,days,tgt,sl,SIMS);
+
+  const bp=be(pay), edge=p>bp;
+  const evT=(1+pay)*p-1;
+  const cls=edge?(M.ror>0.25?'no':M.ror>0.08?'mid':'yes'):'no';
+  const fmt=v=>v.toFixed(1)+'$';
+  const worse=k=>M[k]<F[k];
+
+  document.getElementById('simOut').innerHTML=`
+    <div class="eyebrow" style="margin-top:18px">مضاعف ${mult}× مقابل حجم ثابت</div>
+    <table><thead><tr><th></th><th>مضاعف ${mult}×</th><th>ثابت 1×</th></tr></thead><tbody>
+      <tr><td>احتمال الإفلاس</td>
+        <td class="n" style="color:${worse('ror')?'var(--graphite)':'var(--halt)'}">${pct(M.ror)}</td>
+        <td class="n">${pct(F.ror)}</td></tr>
+      <tr><td>الرصيد الوسيط</td><td class="n">${fmt(M.med)}</td><td class="n">${fmt(F.med)}</td></tr>
+      <tr><td>أسوأ 5%</td>
+        <td class="n" style="color:var(--halt)">${fmt(M.p05)}</td>
+        <td class="n">${fmt(F.p05)}</td></tr>
+      <tr><td>أفضل 5%</td><td class="n">${fmt(M.p95)}</td><td class="n">${fmt(F.p95)}</td></tr>
+      <tr><td>احتمال الربح</td><td class="n">${pct(M.pw)}</td><td class="n">${pct(F.pw)}</td></tr>
+    </tbody></table>
+    <div class="verdict ${cls}">
+      <b>${edge?`حافة موجودة: ${pct(p)} فوق التعادل ${pct2(bp)}`:`لا حافة: ${pct(p)} تحت التعادل ${pct2(bp)}`}</b>
+      ${edge
+        ? `الربح المتوقع للصفقة ${evT>=0?'+':''}${evT.toFixed(4)}$ لكل 1$. المضاعف وسّع المدى: أسوأ 5% نزل إلى ${fmt(M.p05)} مقابل ${fmt(F.p05)} بالحجم الثابت، مقابل رصيد وسيط ${fmt(M.med)} مقابل ${fmt(F.med)}. الحافة موجودة أصلاً — المضاعف يعيد توزيع النتائج فقط.`
+        : `الربح المتوقع للصفقة ${evT.toFixed(4)}$ — سالب قبل أي مضاعف. الرصيد الوسيط نزل من ${fmt(bal0)} إلى ${fmt(M.med)} خلال ${days} يوماً، وأسوأ 5% انتهى عند ${fmt(M.p05)}. لا يوجد إعداد مضاعف يصلح نسبة نجاح تحت التعادل — المضاعف يوسّع التشتت ولا يغيّر الاتجاه.`}
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">4000 محاكاة لكل نظام · هدف ${tgt}$ وحد خسارة ${sl}$ للجلسة · أقصى مضاعفات متتالية: ${M.maxLay}</div>`;
+  addLog(`Sim ${entry}×${mult} @${(pay*100).toFixed(0)}% wr${(p*100).toFixed(0)}% → RoR ${pct(M.ror)} vs flat ${pct(F.ror)}`,M.ror>0.15?'r':'y');
+}
+
+/* ============ tools ============ */
+function drawCalc(){
+  document.getElementById('beTable').innerHTML=[50,60,70,75,80,85,90,92].map(p=>{
+    const ok=p>=cfg.min;
+    return `<tr><td class="n">${p}%</td><td class="n">${pct2(be(p/100))}</td>
+      <td class="n"><span class="pill ${ok?'w':'l'}">${ok?'مقبول':'مرفوض'}</span></td></tr>`}).join('');
+}
+function exportCsv(){
+  if(!trades.length){alert('لا توجد صفقات');return}
+  const h='datetime,asset,side,source,payout,stake,result,pnl,rsi,discipline,mode\n';
+  const b=trades.map(t=>[t.d,t.a,t.s,`"${t.src||''}"`,t.pay,t.stake,t.win?'win':'loss',t.pnl.toFixed(2),t.rsi??'',t.emo,t.mode].join(',')).join('\n');
+  const u=URL.createObjectURL(new Blob(['\ufeff'+h+b],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=u;a.download='mizan_trades.csv';a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function wipe(){if(confirm('سيُمسح كل شيء نهائياً. متأكد؟')){trades=[];logs=[];S.set('trades',[]);S.set('logs',[]);refresh()}}
+
+/* ============ shell ============ */
+function tab(t){
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+t));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  window.scrollTo(0,0);refresh();
+}
+function refresh(){fillSelects();evaluate();drawJournal();drawSources();drawStats();drawCalc();drawLog()}
+
+['iPayout','iRsi','iSide','iAsset','iSrc'].forEach(id=>document.getElementById(id).addEventListener('input',evaluate));
+['cBal','cMin','cTgt','cSl'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{
+  cfg={bal:+document.getElementById('cBal').value||50,min:+document.getElementById('cMin').value||80,
+       tgt:+document.getElementById('cTgt').value||2,sl:+document.getElementById('cSl').value||3};
+  S.set('cfg',cfg);refresh();
+}));
+document.getElementById('btnGoJournal').onclick=()=>tab('journal');
+document.getElementById('cBal').value=cfg.bal;document.getElementById('cMin').value=cfg.min;
+document.getElementById('cTgt').value=cfg.tgt;document.getElementById('cSl').value=cfg.sl;
+drawManual();fillSelects();refresh();
+if(!logs.length)addLog('Mizan ready. No broker connection — by design.','b');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
